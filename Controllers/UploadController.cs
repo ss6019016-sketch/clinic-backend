@@ -12,12 +12,10 @@ namespace clinic.Controllers
     public class UploadController : ControllerBase
     {
         private readonly DapperContext _context;
-        private readonly IWebHostEnvironment _env;
 
-        public UploadController(DapperContext context, IWebHostEnvironment env)
+        public UploadController(DapperContext context)
         {
             _context = context;
-            _env = env;
         }
 
         [HttpPost("profile-photo")]
@@ -34,29 +32,26 @@ namespace clinic.Controllers
             if (file.Length > 2 * 1024 * 1024)
                 return BadRequest(new { message = "Max 2MB allowed" });
 
-            // ✅ Railway pe contentRoot use karo, wwwroot nahi
-            var uploadsFolder = Path.Combine(
-                _env.ContentRootPath, "uploads"
-            );
-            Directory.CreateDirectory(uploadsFolder);
+            // Base64 mein convert karo
+            using var memoryStream = new MemoryStream();
+            await file.CopyToAsync(memoryStream);
+            var bytes = memoryStream.ToArray();
+            var base64 = Convert.ToBase64String(bytes);
+            var mimeType = file.ContentType;
+            var dataUrl = $"data:{mimeType};base64,{base64}";
 
-            var fileName = $"{Guid.NewGuid()}{ext}";
-            var filePath = Path.Combine(uploadsFolder, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            var fileUrl = $"/uploads/{fileName}";
-
+            // DB mein save karo
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             using var db = _context.CreateConnection();
             await db.ExecuteAsync(
                 "UPDATE Users SET ProfilePhoto=@Photo WHERE Id=@Id",
-                new { Photo = fileUrl, Id = userId });
+                new { Photo = dataUrl, Id = userId });
 
-            return Ok(new { photoUrl = fileUrl, message = "Photo uploaded!" });
+            return Ok(new
+            {
+                photoUrl = dataUrl,
+                message = "Photo uploaded successfully!"
+            });
         }
 
         [HttpGet("my-profile")]
