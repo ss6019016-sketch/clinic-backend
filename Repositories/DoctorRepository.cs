@@ -33,27 +33,32 @@ namespace clinic.Repositories
         {
             using var db = _context.CreateConnection();
             return await db.ExecuteScalarAsync<int>(@"
-                INSERT INTO Doctors
-                    (FullName, Specialization, Phone, Email, Experience,
-                     Fee, AvailableDays, Qualification, LicenseNumber, Bio)
-                VALUES
-                    (@FullName, @Specialization, @Phone, @Email, @Experience,
-                     @Fee, @AvailableDays, @Qualification, @LicenseNumber, @Bio);
-                SELECT SCOPE_IDENTITY();", dto);
+        INSERT INTO Doctors
+            (FullName, Specialization, Phone, Email, Experience,
+             Fee, AvailableDays, Qualification, LicenseNumber, Bio, ProfilePhoto)
+        VALUES
+            (@FullName, @Specialization, @Phone, @Email, @Experience,
+             @Fee, @AvailableDays, @Qualification, @LicenseNumber, @Bio, @ProfilePhoto);
+        SELECT SCOPE_IDENTITY();", dto);
         }
+
+
+
 
         public async Task<bool> UpdateAsync(DoctorUpdateDto dto)
         {
             using var db = _context.CreateConnection();
             return await db.ExecuteAsync(@"
-                UPDATE Doctors SET
-                    FullName=@FullName, Specialization=@Specialization,
-                    Phone=@Phone, Email=@Email, Experience=@Experience,
-                    Fee=@Fee, AvailableDays=@AvailableDays,
-                    Qualification=@Qualification,
-                    LicenseNumber=@LicenseNumber, Bio=@Bio
-                WHERE Id=@Id", dto) > 0;
+        UPDATE Doctors SET
+            FullName=@FullName, Specialization=@Specialization,
+            Phone=@Phone, Email=@Email, Experience=@Experience,
+            Fee=@Fee, AvailableDays=@AvailableDays,
+            Qualification=@Qualification,
+            LicenseNumber=@LicenseNumber, Bio=@Bio,
+            ProfilePhoto=@ProfilePhoto
+        WHERE Id=@Id", dto) > 0;
         }
+
 
         public async Task<bool> DeleteAsync(int id)
         {

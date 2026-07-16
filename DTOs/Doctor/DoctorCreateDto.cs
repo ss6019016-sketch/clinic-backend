@@ -14,6 +14,7 @@ namespace clinic.DTOs.Doctor
         public string Qualification { get; set; } = string.Empty;
         public string LicenseNumber { get; set; } = string.Empty;
         public string Bio { get; set; } = string.Empty;
+        public string ProfilePhoto { get; set; } = string.Empty;
     }
 
 
