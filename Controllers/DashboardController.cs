@@ -4,7 +4,7 @@ using Dapper;
 using clinic.Data;
 
 namespace clinic.Controllers
-{
+{   
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]

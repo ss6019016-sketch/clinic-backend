@@ -35,13 +35,14 @@ namespace clinic.Repositories
             return await db.ExecuteScalarAsync<int>(@"
         INSERT INTO Doctors
             (FullName, Specialization, Phone, Email, Experience,
-             Fee, AvailableDays, Qualification, LicenseNumber, Bio, ProfilePhoto)
+             Fee, AvailableDays, Qualification, LicenseNumber,
+             Bio, ProfilePhoto)
         VALUES
             (@FullName, @Specialization, @Phone, @Email, @Experience,
-             @Fee, @AvailableDays, @Qualification, @LicenseNumber, @Bio, @ProfilePhoto);
+             @Fee, @AvailableDays, @Qualification, @LicenseNumber,
+             @Bio, @ProfilePhoto);
         SELECT SCOPE_IDENTITY();", dto);
         }
-
 
 
 
@@ -50,15 +51,19 @@ namespace clinic.Repositories
             using var db = _context.CreateConnection();
             return await db.ExecuteAsync(@"
         UPDATE Doctors SET
-            FullName=@FullName, Specialization=@Specialization,
-            Phone=@Phone, Email=@Email, Experience=@Experience,
-            Fee=@Fee, AvailableDays=@AvailableDays,
+            FullName=@FullName,
+            Specialization=@Specialization,
+            Phone=@Phone,
+            Email=@Email,
+            Experience=@Experience,
+            Fee=@Fee,
+            AvailableDays=@AvailableDays,
             Qualification=@Qualification,
-            LicenseNumber=@LicenseNumber, Bio=@Bio,
+            LicenseNumber=@LicenseNumber,
+            Bio=@Bio,
             ProfilePhoto=@ProfilePhoto
         WHERE Id=@Id", dto) > 0;
         }
-
 
         public async Task<bool> DeleteAsync(int id)
         {

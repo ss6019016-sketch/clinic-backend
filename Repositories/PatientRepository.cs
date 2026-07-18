@@ -58,9 +58,11 @@ namespace clinic.Repositories
         public async Task<bool> DeleteAsync(int id)
         {
             using var db = _context.CreateConnection();
-            return await db.ExecuteAsync(
-                "UPDATE Patients SET Status='Deleted' WHERE Id=@Id",
-                new { Id = id }) > 0;
+            // Soft delete
+            var rows = await db.ExecuteAsync(
+                "UPDATE Patients SET Status='Deleted' WHERE Id=@Id AND Status='Active'",
+                new { Id = id });
+            return rows > 0;
         }
     }
 }

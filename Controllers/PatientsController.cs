@@ -46,9 +46,17 @@ namespace clinic.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _service.DeleteAsync(id);
-            if (!result) return NotFound(new { message = "Patient not found" });
-            return Ok(new { message = "Patient deleted successfully" });
+            try
+            {
+                var result = await _service.DeleteAsync(id);
+                if (!result)
+                    return NotFound(new { message = "Patient not found" });
+                return Ok(new { message = "Patient deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
     }
 }

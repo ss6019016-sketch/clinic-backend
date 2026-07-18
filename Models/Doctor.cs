@@ -11,6 +11,7 @@
         public decimal Fee { get; set; }
         public string AvailableDays { get; set; } = string.Empty;
         public string Qualification { get; set; } = string.Empty;
+        public string ProfilePhoto { get; set; } = string.Empty;
         public string LicenseNumber { get; set; } = string.Empty;
         public string Bio { get; set; } = string.Empty;
         public string Status { get; set; } = "Active";
