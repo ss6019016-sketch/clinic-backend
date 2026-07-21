@@ -11,5 +11,9 @@ namespace clinic.Repositories.Interfaces
         Task<bool> UpdateAsync(AppointmentUpdateDto dto);
         Task<bool> UpdateStatusAsync(int id, string status);
         Task<bool> DeleteAsync(int id);
+
+        // Reminder support
+        Task<IEnumerable<Appointment>> GetPendingRemindersAsync(DateTime date);
+        Task<bool> MarkReminderSentAsync(int id);
     }
 }

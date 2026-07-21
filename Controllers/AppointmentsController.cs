@@ -62,5 +62,16 @@ namespace clinic.Controllers
             if (!result) return NotFound();
             return Ok(new { message = "Appointment deleted successfully" });
         }
+
+        [HttpPost("{id}/send-reminder")]
+        public async Task<IActionResult> SendReminder(int id)
+        {
+            var (success, message) = await _service.SendReminderNowAsync(id);
+
+            if (!success)
+                return BadRequest(new { message });
+
+            return Ok(new { message });
+        }
     }
 }

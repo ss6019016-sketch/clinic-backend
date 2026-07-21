@@ -11,5 +11,6 @@ namespace clinic.Services.Interfaces
         Task<bool> UpdateAsync(int id, AppointmentCreateDto dto);
         Task<bool> UpdateStatusAsync(int id, string status);
         Task<bool> DeleteAsync(int id);
+        Task<(bool success, string message)> SendReminderNowAsync(int id);
     }
 }

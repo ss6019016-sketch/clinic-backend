@@ -16,7 +16,7 @@ namespace clinic.Repositories
         {
             using var db = _context.CreateConnection();
             var sql = @"
-                SELECT a.*, p.FullName AS PatientName, d.FullName AS DoctorName
+                SELECT a.*, p.FullName AS PatientName, p.Phone AS PatientPhone, d.FullName AS DoctorName
                 FROM Appointments a
                 JOIN Patients p ON a.PatientId = p.Id
                 JOIN Doctors  d ON a.DoctorId  = d.Id
@@ -36,11 +36,33 @@ namespace clinic.Repositories
         {
             using var db = _context.CreateConnection();
             return await db.QueryFirstOrDefaultAsync<Appointment>(@"
-                SELECT a.*, p.FullName AS PatientName, d.FullName AS DoctorName
+                SELECT a.*, p.FullName AS PatientName, p.Phone AS PatientPhone, d.FullName AS DoctorName
                 FROM Appointments a
                 JOIN Patients p ON a.PatientId = p.Id
                 JOIN Doctors  d ON a.DoctorId  = d.Id
                 WHERE a.Id=@Id", new { Id = id });
+        }
+
+        public async Task<IEnumerable<Appointment>> GetPendingRemindersAsync(DateTime date)
+        {
+            using var db = _context.CreateConnection();
+            return await db.QueryAsync<Appointment>(@"
+                SELECT a.*, p.FullName AS PatientName, p.Phone AS PatientPhone, d.FullName AS DoctorName
+                FROM Appointments a
+                JOIN Patients p ON a.PatientId = p.Id
+                JOIN Doctors  d ON a.DoctorId  = d.Id
+                WHERE a.AppointmentDate = @Date
+                  AND a.Status IN ('Pending', 'Confirmed')
+                  AND a.ReminderSent = 0",
+                new { Date = date.Date });
+        }
+
+        public async Task<bool> MarkReminderSentAsync(int id)
+        {
+            using var db = _context.CreateConnection();
+            return await db.ExecuteAsync(
+                "UPDATE Appointments SET ReminderSent = 1 WHERE Id=@Id",
+                new { Id = id }) > 0;
         }
 
         public async Task<int> CreateAsync(AppointmentCreateDto dto)
