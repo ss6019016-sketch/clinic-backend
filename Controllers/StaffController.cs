@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using clinic.DTOs.Staff;
 using clinic.Repositories.Interfaces;
+using clinic.Models;
+using System.Security.Claims;
 
 namespace clinic.Controllers
 {
@@ -11,7 +13,26 @@ namespace clinic.Controllers
     public class StaffController : ControllerBase
     {
         private readonly IStaffRepository _repo;
-        public StaffController(IStaffRepository repo) => _repo = repo;
+        private readonly IAuditLogRepository _audit;
+        public StaffController(IStaffRepository repo, IAuditLogRepository audit)
+        {
+            _repo = repo;
+            _audit = audit;
+        }
+
+        private async Task LogAsync(string action, int entityId, string? details = null)
+        {
+            await _audit.LogAsync(new AuditLog
+            {
+                UserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
+                UserName = User.FindFirst(ClaimTypes.Name)?.Value ?? "",
+                Role = User.FindFirst(ClaimTypes.Role)?.Value ?? "",
+                Action = action,
+                Entity = "Staff",
+                EntityId = entityId,
+                Details = details
+            });
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] string? search)
@@ -31,6 +52,7 @@ namespace clinic.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var id = await _repo.CreateAsync(dto);
+            await LogAsync("Create", id, $"Created staff '{dto.FullName}' with role '{dto.Role}'");
             return Ok(new { message = "Staff added successfully", id });
         }
 
@@ -41,6 +63,7 @@ namespace clinic.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var result = await _repo.UpdateAsync(dto);
             if (!result) return NotFound();
+            await LogAsync("Update", id);
             return Ok(new { message = "Staff updated successfully" });
         }
 
@@ -49,6 +72,7 @@ namespace clinic.Controllers
         {
             var result = await _repo.UpdateStatusAsync(id, dto.Status);
             if (!result) return NotFound();
+            await LogAsync("StatusChange", id, $"Status changed to '{dto.Status}'");
             return Ok(new { message = $"Staff {dto.Status} successfully" });
         }
 
@@ -57,6 +81,7 @@ namespace clinic.Controllers
         {
             var result = await _repo.DeleteAsync(id);
             if (!result) return NotFound();
+            await LogAsync("Delete", id);
             return Ok(new { message = "Staff deleted successfully" });
         }
     }

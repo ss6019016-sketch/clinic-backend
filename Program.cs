@@ -24,11 +24,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<DapperContext>();
 
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
+builder.Services.AddScoped<IStaffRepository, StaffRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 builder.Services.AddScoped<IBillingRepository, BillingRepository>();
 builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
-builder.Services.AddScoped<IStaffRepository, StaffRepository>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
@@ -71,8 +72,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI(); 
+app.UseMiddleware<clinic.Middleware.ExceptionMiddleware>();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

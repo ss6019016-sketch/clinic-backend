@@ -54,7 +54,7 @@ namespace clinic.Services
                     dto.Email,
                     dto.Phone,
                     Password = PasswordHelper.Hash(dto.Password),
-                    dto.Role
+                    Role = "Receptionist" // Hardcoded — never trust a role sent by the client
                 });
             return true;
         }

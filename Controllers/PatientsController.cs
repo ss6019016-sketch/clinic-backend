@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using clinic.DTOs.Patient;
 using clinic.Services.Interfaces;
+using clinic.Repositories.Interfaces;
+using clinic.Models;
+using System.Security.Claims;
 
 namespace clinic.Controllers
 {
@@ -11,7 +14,12 @@ namespace clinic.Controllers
     public class PatientsController : ControllerBase
     {
         private readonly IPatientService _service;
-        public PatientsController(IPatientService service) => _service = service;
+        private readonly IAuditLogRepository _audit;
+        public PatientsController(IPatientService service, IAuditLogRepository audit)
+        {
+            _service = service;
+            _audit = audit;
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] string? search)
@@ -43,6 +51,7 @@ namespace clinic.Controllers
             return Ok(new { message = "Patient updated successfully" });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -51,6 +60,17 @@ namespace clinic.Controllers
                 var result = await _service.DeleteAsync(id);
                 if (!result)
                     return NotFound(new { message = "Patient not found" });
+
+                await _audit.LogAsync(new AuditLog
+                {
+                    UserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
+                    UserName = User.FindFirst(ClaimTypes.Name)?.Value ?? "",
+                    Role = User.FindFirst(ClaimTypes.Role)?.Value ?? "",
+                    Action = "Delete",
+                    Entity = "Patient",
+                    EntityId = id
+                });
+
                 return Ok(new { message = "Patient deleted successfully" });
             }
             catch (Exception ex)

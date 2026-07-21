@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using clinic.DTOs.Billing;
 using clinic.Repositories.Interfaces;
+using clinic.Models;
+using System.Security.Claims;
 
 namespace clinic.Controllers
 {
@@ -11,7 +13,12 @@ namespace clinic.Controllers
     public class BillingController : ControllerBase
     {
         private readonly IBillingRepository _repo;
-        public BillingController(IBillingRepository repo) => _repo = repo;
+        private readonly IAuditLogRepository _audit;
+        public BillingController(IBillingRepository repo, IAuditLogRepository audit)
+        {
+            _repo = repo;
+            _audit = audit;
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetAll(
@@ -55,11 +62,23 @@ namespace clinic.Controllers
             return Ok(new { message = "Payment status updated" });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _repo.DeleteAsync(id);
             if (!result) return NotFound();
+
+            await _audit.LogAsync(new AuditLog
+            {
+                UserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
+                UserName = User.FindFirst(ClaimTypes.Name)?.Value ?? "",
+                Role = User.FindFirst(ClaimTypes.Role)?.Value ?? "",
+                Action = "Delete",
+                Entity = "Invoice",
+                EntityId = id
+            });
+
             return Ok(new { message = "Invoice deleted successfully" });
         }
     }
