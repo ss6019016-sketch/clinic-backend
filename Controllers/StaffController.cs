@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using clinic.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using clinic.DTOs.Staff;
 using clinic.Repositories.Interfaces;
@@ -9,7 +10,7 @@ namespace clinic.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class StaffController : ControllerBase
     {
         private readonly IStaffRepository _repo;
@@ -34,6 +35,7 @@ namespace clinic.Controllers
             });
         }
 
+        [RequirePermission("Staff", "View")]
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] string? search,
@@ -45,6 +47,7 @@ namespace clinic.Controllers
             return Ok(await _repo.GetAllAsync(search, page, pageSize));
         }
 
+        [RequirePermission("Staff", "View")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -54,6 +57,7 @@ namespace clinic.Controllers
             return Ok(staff);
         }
 
+        [RequirePermission("Staff", "Create")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] StaffCreateDto dto)
         {
@@ -63,6 +67,7 @@ namespace clinic.Controllers
             return Ok(new { message = "Staff added successfully", id });
         }
 
+        [RequirePermission("Staff", "Edit")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] StaffUpdateDto dto)
         {
@@ -74,6 +79,7 @@ namespace clinic.Controllers
             return Ok(new { message = "Staff updated successfully" });
         }
 
+        [RequirePermission("Staff", "Edit")]
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] StaffStatusDto dto)
         {
@@ -83,6 +89,7 @@ namespace clinic.Controllers
             return Ok(new { message = $"Staff {dto.Status} successfully" });
         }
 
+        [RequirePermission("Staff", "Delete")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

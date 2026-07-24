@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using clinic.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using clinic.DTOs.Billing;
 using clinic.Repositories.Interfaces;
@@ -34,6 +35,7 @@ namespace clinic.Controllers
             });
         }
 
+        [RequirePermission("Billing", "View")]
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] string? status,
@@ -46,6 +48,7 @@ namespace clinic.Controllers
             return Ok(await _repo.GetAllAsync(status, search, page, pageSize));
         }
 
+        [RequirePermission("Billing", "View")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {

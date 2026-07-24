@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using clinic.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using clinic.DTOs.Prescription;
 using clinic.Repositories.Interfaces;
@@ -13,6 +14,7 @@ namespace clinic.Controllers
         private readonly IPrescriptionRepository _repo;
         public PrescriptionsController(IPrescriptionRepository repo) => _repo = repo;
 
+        [RequirePermission("Prescriptions", "View")]
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] string? search,
@@ -24,6 +26,7 @@ namespace clinic.Controllers
             return Ok(await _repo.GetAllAsync(search, page, pageSize));
         }
 
+        [RequirePermission("Prescriptions", "View")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {

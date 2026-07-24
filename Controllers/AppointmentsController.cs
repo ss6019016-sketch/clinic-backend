@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using clinic.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using clinic.DTOs.Appointment;
 using clinic.Services.Interfaces;
@@ -14,6 +15,7 @@ namespace clinic.Controllers
         public AppointmentsController(IAppointmentService service)
             => _service = service;
 
+        [RequirePermission("Appointments", "View")]
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] string? status,
@@ -26,6 +28,7 @@ namespace clinic.Controllers
             return Ok(await _service.GetAllAsync(status, search, page, pageSize));
         }
 
+        [RequirePermission("Appointments", "View")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {

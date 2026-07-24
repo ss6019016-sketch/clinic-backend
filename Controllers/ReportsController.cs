@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using clinic.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Dapper;
 using clinic.Data;
@@ -13,6 +14,7 @@ namespace clinic.Controllers
         private readonly DapperContext _context;
         public ReportsController(DapperContext context) => _context = context;
 
+        [RequirePermission("Reports", "View")]
         [HttpGet("revenue")]
         public async Task<IActionResult> GetRevenue(
             [FromQuery] string? from,
@@ -42,6 +44,7 @@ namespace clinic.Controllers
             return Ok(data);
         }
 
+        [RequirePermission("Reports", "View")]
         [HttpGet("top-doctors")]
         public async Task<IActionResult> GetTopDoctors()
         {
@@ -61,6 +64,7 @@ namespace clinic.Controllers
             return Ok(data);
         }
 
+        [RequirePermission("Reports", "View")]
         [HttpGet("appointments")]
         public async Task<IActionResult> GetAppointmentStats(
             [FromQuery] string? from,
@@ -92,6 +96,7 @@ namespace clinic.Controllers
             return Ok(data);
         }
 
+        [RequirePermission("Reports", "View")]
         [HttpGet("summary")]
         public async Task<IActionResult> GetSummary()
         {

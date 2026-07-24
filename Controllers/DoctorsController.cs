@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using clinic.Authorization;
 using clinic.DTOs.Doctor;
 using clinic.Services.Interfaces;
 using clinic.Repositories.Interfaces;
@@ -35,6 +36,7 @@ namespace clinic.Controllers
             });
         }
 
+        [RequirePermission("Doctors", "View")]
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] string? search,
@@ -46,6 +48,7 @@ namespace clinic.Controllers
             return Ok(await _service.GetAllAsync(search, page, pageSize));
         }
 
+        [RequirePermission("Doctors", "View")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -55,7 +58,7 @@ namespace clinic.Controllers
             return Ok(doctor);
         }
 
-        [Authorize(Roles = "Admin")]
+        [RequirePermission("Doctors", "Create")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] DoctorCreateDto dto)
         {
@@ -65,6 +68,7 @@ namespace clinic.Controllers
             return Ok(new { message = "Doctor created successfully", id });
         }
 
+        [RequirePermission("Doctors", "Edit")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] DoctorCreateDto dto)
         {
@@ -75,7 +79,7 @@ namespace clinic.Controllers
             return Ok(new { message = "Doctor updated successfully" });
         }
 
-        [Authorize(Roles = "Admin")]
+        [RequirePermission("Doctors", "Delete")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

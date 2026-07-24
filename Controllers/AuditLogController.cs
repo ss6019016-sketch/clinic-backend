@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using clinic.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using clinic.Repositories.Interfaces;
 
@@ -6,12 +7,13 @@ namespace clinic.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class AuditLogController : ControllerBase
     {
         private readonly IAuditLogRepository _repo;
         public AuditLogController(IAuditLogRepository repo) => _repo = repo;
 
+        [RequirePermission("AuditLog", "View")]
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] string? entity,

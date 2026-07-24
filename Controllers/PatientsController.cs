@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using clinic.Authorization;
 using clinic.DTOs.Patient;
 using clinic.Services.Interfaces;
 using clinic.Repositories.Interfaces;
@@ -21,6 +22,7 @@ namespace clinic.Controllers
             _audit = audit;
         }
  
+        [RequirePermission("Patients", "View")]
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] string? search,
@@ -32,6 +34,7 @@ namespace clinic.Controllers
             return Ok(await _service.GetAllAsync(search, page, pageSize));
         }
  
+        [RequirePermission("Patients", "View")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -58,7 +61,7 @@ namespace clinic.Controllers
             return Ok(new { message = "Patient updated successfully" });
         }
  
-        [Authorize(Roles = "Admin")]
+        [RequirePermission("Patients", "Delete")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

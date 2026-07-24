@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using clinic.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Dapper;
 using clinic.Data;
@@ -16,6 +17,7 @@ namespace clinic.Controllers
         private readonly DapperContext _context;
         public SettingsController(DapperContext context) => _context = context;
 
+        [RequirePermission("Settings", "View")]
         [HttpGet]
         public async Task<IActionResult> Get()
         {
