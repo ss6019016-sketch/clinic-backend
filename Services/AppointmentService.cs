@@ -15,8 +15,8 @@ namespace clinic.Services
             _whatsApp = whatsApp;
         }
 
-        public Task<IEnumerable<Appointment>> GetAllAsync(string? status, string? search)
-            => _repo.GetAllAsync(status, search);
+        public Task<PagedResult<Appointment>> GetAllAsync(string? status, string? search, int page, int pageSize)
+            => _repo.GetAllAsync(status, search, page, pageSize);
 
         public Task<Appointment?> GetByIdAsync(int id)
             => _repo.GetByIdAsync(id);

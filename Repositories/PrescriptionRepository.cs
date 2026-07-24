@@ -11,24 +11,48 @@ namespace clinic.Repositories
         private readonly DapperContext _context;
         public PrescriptionRepository(DapperContext context) => _context = context;
 
-        public async Task<IEnumerable<Prescription>> GetAllAsync(string? search)
+        public async Task<PagedResult<Prescription>> GetAllAsync(string? search, int page, int pageSize)
         {
             using var db = _context.CreateConnection();
-            var sql = @"
+            var whereClause = "WHERE 1=1";
+
+            if (!string.IsNullOrEmpty(search))
+                whereClause += @" AND (p.FullName LIKE @Search
+                           OR d.FullName LIKE @Search
+                           OR pr.Diagnosis LIKE @Search)";
+
+            var countSql = $@"
+                SELECT COUNT(*)
+                FROM Prescriptions pr
+                JOIN Patients p ON pr.PatientId = p.Id
+                JOIN Doctors d  ON pr.DoctorId  = d.Id
+                {whereClause}";
+            var dataSql = $@"
                 SELECT pr.*, p.FullName AS PatientName, d.FullName AS DoctorName
                 FROM Prescriptions pr
                 JOIN Patients p ON pr.PatientId = p.Id
                 JOIN Doctors d  ON pr.DoctorId  = d.Id
-                WHERE 1=1";
+                {whereClause}
+                ORDER BY pr.CreatedAt DESC
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
 
-            if (!string.IsNullOrEmpty(search))
-                sql += @" AND (p.FullName LIKE @Search
-                           OR d.FullName LIKE @Search
-                           OR pr.Diagnosis LIKE @Search)";
+            var parameters = new
+            {
+                Search = $"%{search}%",
+                Offset = (page - 1) * pageSize,
+                PageSize = pageSize
+            };
 
-            sql += " ORDER BY pr.CreatedAt DESC";
-            return await db.QueryAsync<Prescription>(sql,
-                new { Search = $"%{search}%" });
+            var totalCount = await db.ExecuteScalarAsync<int>(countSql, parameters);
+            var items = await db.QueryAsync<Prescription>(dataSql, parameters);
+
+            return new PagedResult<Prescription>
+            {
+                Items = items.ToList(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<Prescription?> GetByIdAsync(int id)

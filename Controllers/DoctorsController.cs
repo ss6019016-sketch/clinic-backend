@@ -36,8 +36,15 @@ namespace clinic.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] string? search)
-            => Ok(await _service.GetAllAsync(search));
+        public async Task<IActionResult> GetAll(
+            [FromQuery] string? search,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 10;
+            return Ok(await _service.GetAllAsync(search, page, pageSize));
+        }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -64,6 +71,7 @@ namespace clinic.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var result = await _service.UpdateAsync(id, dto);
             if (!result) return NotFound(new { message = "Doctor not found" });
+            await LogAsync("Update", id, $"Updated doctor '{dto.FullName}'");
             return Ok(new { message = "Doctor updated successfully" });
         }
 

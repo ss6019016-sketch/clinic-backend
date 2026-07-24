@@ -11,24 +11,48 @@ namespace clinic.Repositories
         private readonly DapperContext _context;
         public BillingRepository(DapperContext context) => _context = context;
 
-        public async Task<IEnumerable<Invoice>> GetAllAsync(
-            string? status, string? search)
+        public async Task<PagedResult<Invoice>> GetAllAsync(
+            string? status, string? search, int page, int pageSize)
         {
             using var db = _context.CreateConnection();
-            var sql = @"
+            var whereClause = "WHERE 1=1";
+
+            if (!string.IsNullOrEmpty(status) && status != "All")
+                whereClause += " AND i.Status = @Status";
+            if (!string.IsNullOrEmpty(search))
+                whereClause += " AND (p.FullName LIKE @Search OR i.InvoiceNumber LIKE @Search)";
+
+            var countSql = $@"
+                SELECT COUNT(*)
+                FROM Invoices i
+                JOIN Patients p ON i.PatientId = p.Id
+                {whereClause}";
+            var dataSql = $@"
                 SELECT i.*, p.FullName AS PatientName
                 FROM Invoices i
                 JOIN Patients p ON i.PatientId = p.Id
-                WHERE 1=1";
+                {whereClause}
+                ORDER BY i.CreatedAt DESC
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
 
-            if (!string.IsNullOrEmpty(status) && status != "All")
-                sql += " AND i.Status = @Status";
-            if (!string.IsNullOrEmpty(search))
-                sql += " AND (p.FullName LIKE @Search OR i.InvoiceNumber LIKE @Search)";
+            var parameters = new
+            {
+                Status = status,
+                Search = $"%{search}%",
+                Offset = (page - 1) * pageSize,
+                PageSize = pageSize
+            };
 
-            sql += " ORDER BY i.CreatedAt DESC";
-            return await db.QueryAsync<Invoice>(sql,
-                new { Status = status, Search = $"%{search}%" });
+            var totalCount = await db.ExecuteScalarAsync<int>(countSql, parameters);
+            var items = await db.QueryAsync<Invoice>(dataSql, parameters);
+
+            return new PagedResult<Invoice>
+            {
+                Items = items.ToList(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<Invoice?> GetByIdAsync(int id)

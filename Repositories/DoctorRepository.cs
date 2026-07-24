@@ -11,15 +11,35 @@ namespace clinic.Repositories
         private readonly DapperContext _context;
         public DoctorRepository(DapperContext context) => _context = context;
 
-        public async Task<IEnumerable<Doctor>> GetAllAsync(string? search)
+        public async Task<PagedResult<Doctor>> GetAllAsync(string? search, int page, int pageSize)
         {
             using var db = _context.CreateConnection();
-            var sql = "SELECT * FROM Doctors WHERE Status='Active'";
+            var whereClause = "WHERE Status='Active'";
             if (!string.IsNullOrEmpty(search))
-                sql += " AND (FullName LIKE @Search OR Specialization LIKE @Search)";
-            sql += " ORDER BY CreatedAt DESC";
-            return await db.QueryAsync<Doctor>(sql,
-                new { Search = $"%{search}%" });
+                whereClause += " AND (FullName LIKE @Search OR Specialization LIKE @Search)";
+
+            var countSql = $"SELECT COUNT(*) FROM Doctors {whereClause}";
+            var dataSql = $@"SELECT * FROM Doctors {whereClause}
+                ORDER BY CreatedAt DESC
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
+
+            var parameters = new
+            {
+                Search = $"%{search}%",
+                Offset = (page - 1) * pageSize,
+                PageSize = pageSize
+            };
+
+            var totalCount = await db.ExecuteScalarAsync<int>(countSql, parameters);
+            var items = await db.QueryAsync<Doctor>(dataSql, parameters);
+
+            return new PagedResult<Doctor>
+            {
+                Items = items.ToList(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<Doctor?> GetByIdAsync(int id)

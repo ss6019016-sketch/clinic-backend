@@ -12,17 +12,37 @@ namespace clinic.Repositories
         private readonly DapperContext _context;
         public StaffRepository(DapperContext context) => _context = context;
 
-        public async Task<IEnumerable<Staff>> GetAllAsync(string? search)
+        public async Task<PagedResult<Staff>> GetAllAsync(string? search, int page, int pageSize)
         {
             using var db = _context.CreateConnection();
-            var sql = "SELECT * FROM Users WHERE 1=1";
+            var whereClause = "WHERE 1=1";
             if (!string.IsNullOrEmpty(search))
-                sql += @" AND (FullName LIKE @Search
+                whereClause += @" AND (FullName LIKE @Search
                            OR Email LIKE @Search
                            OR Role LIKE @Search)";
-            sql += " ORDER BY CreatedAt DESC";
-            return await db.QueryAsync<Staff>(sql,
-                new { Search = $"%{search}%" });
+
+            var countSql = $"SELECT COUNT(*) FROM Users {whereClause}";
+            var dataSql = $@"SELECT * FROM Users {whereClause}
+                ORDER BY CreatedAt DESC
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
+
+            var parameters = new
+            {
+                Search = $"%{search}%",
+                Offset = (page - 1) * pageSize,
+                PageSize = pageSize
+            };
+
+            var totalCount = await db.ExecuteScalarAsync<int>(countSql, parameters);
+            var items = await db.QueryAsync<Staff>(dataSql, parameters);
+
+            return new PagedResult<Staff>
+            {
+                Items = items.ToList(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<Staff?> GetByIdAsync(int id)

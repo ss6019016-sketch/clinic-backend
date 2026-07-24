@@ -35,8 +35,15 @@ namespace clinic.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] string? search)
-            => Ok(await _repo.GetAllAsync(search));
+        public async Task<IActionResult> GetAll(
+            [FromQuery] string? search,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 10;
+            return Ok(await _repo.GetAllAsync(search, page, pageSize));
+        }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)

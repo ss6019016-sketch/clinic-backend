@@ -10,8 +10,8 @@ namespace clinic.Services
         private readonly IDoctorRepository _repo;
         public DoctorService(IDoctorRepository repo) => _repo = repo;
 
-        public Task<IEnumerable<Doctor>> GetAllAsync(string? search)
-            => _repo.GetAllAsync(search);
+        public Task<PagedResult<Doctor>> GetAllAsync(string? search, int page, int pageSize)
+            => _repo.GetAllAsync(search, page, pageSize);
 
         public Task<Doctor?> GetByIdAsync(int id)
             => _repo.GetByIdAsync(id);

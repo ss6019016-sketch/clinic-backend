@@ -6,7 +6,7 @@ namespace clinic.DTOs.Patient
     {
         [Required] public string FullName { get; set; } = string.Empty;
         [Required] public string Gender { get; set; } = string.Empty;
-        [Required] public int Age { get; set; }
+        [Range(1, 120, ErrorMessage = "Valid age is required")] public int Age { get; set; }
         [Required] public string Phone { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;

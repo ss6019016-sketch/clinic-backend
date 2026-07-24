@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace clinic.Controllers
 {
-    [ApiController]
+     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
     public class PatientsController : ControllerBase
@@ -20,11 +20,18 @@ namespace clinic.Controllers
             _service = service;
             _audit = audit;
         }
-
+ 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] string? search)
-            => Ok(await _service.GetAllAsync(search));
-
+        public async Task<IActionResult> GetAll(
+            [FromQuery] string? search,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 10;
+            return Ok(await _service.GetAllAsync(search, page, pageSize));
+        }
+ 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -33,7 +40,7 @@ namespace clinic.Controllers
                 return NotFound(new { message = "Patient not found" });
             return Ok(patient);
         }
-
+ 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] PatientCreateDto dto)
         {
@@ -41,7 +48,7 @@ namespace clinic.Controllers
             var id = await _service.CreateAsync(dto);
             return Ok(new { message = "Patient created successfully", id });
         }
-
+ 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] PatientCreateDto dto)
         {
@@ -50,7 +57,7 @@ namespace clinic.Controllers
             if (!result) return NotFound(new { message = "Patient not found" });
             return Ok(new { message = "Patient updated successfully" });
         }
-
+ 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
@@ -60,7 +67,7 @@ namespace clinic.Controllers
                 var result = await _service.DeleteAsync(id);
                 if (!result)
                     return NotFound(new { message = "Patient not found" });
-
+ 
                 await _audit.LogAsync(new AuditLog
                 {
                     UserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
@@ -70,7 +77,7 @@ namespace clinic.Controllers
                     Entity = "Patient",
                     EntityId = id
                 });
-
+ 
                 return Ok(new { message = "Patient deleted successfully" });
             }
             catch (Exception ex)

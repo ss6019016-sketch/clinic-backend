@@ -5,11 +5,14 @@ using clinic.Repositories.Interfaces;
 using clinic.Services;
 using clinic.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -21,8 +24,10 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Database
 builder.Services.AddSingleton<DapperContext>();
 
+// Repositories
 builder.Services.AddScoped<IPatientRepository, PatientRepository>();
 builder.Services.AddScoped<IDoctorRepository, DoctorRepository>();
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
@@ -31,18 +36,23 @@ builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 builder.Services.AddScoped<IStaffRepository, StaffRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
+// Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 
-builder.Services.Configure<WhatsAppSettings>(builder.Configuration.GetSection("WhatsAppSettings"));
+builder.Services.Configure<WhatsAppSettings>(
+    builder.Configuration.GetSection("WhatsAppSettings"));
+
 builder.Services.AddHttpClient<IWhatsAppService, WhatsAppService>();
 builder.Services.AddHostedService<AppointmentReminderBackgroundService>();
 
 builder.Services.AddScoped<JwtHelper>();
 
+// JWT
 var jwt = builder.Configuration.GetSection("JwtSettings");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -61,6 +71,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
@@ -68,34 +79,44 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "http://localhost:4200",
                 "https://clinic-frontend-three-iota.vercel.app"
-              )
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
 var app = builder.Build();
-
+    
+// Global Exception Middleware
 app.UseMiddleware<clinic.Middleware.ExceptionMiddleware>();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Swagger (Production me bhi chalega)
+app.UseSwagger();
+app.UseSwaggerUI();
 
+// HTTPS
 app.UseHttpsRedirection();
+
+// Static Files
 app.UseStaticFiles();
+
 var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "uploads");
 Directory.CreateDirectory(uploadsPath);
 
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    FileProvider = new PhysicalFileProvider(uploadsPath),
     RequestPath = "/uploads"
 });
+
+// CORS
 app.UseCors("AllowAngular");
+
+// Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Controllers
 app.MapControllers();
+
 app.Run();

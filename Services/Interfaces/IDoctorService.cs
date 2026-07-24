@@ -5,7 +5,7 @@ namespace clinic.Services.Interfaces
 {
     public interface IDoctorService
     {
-        Task<IEnumerable<Doctor>> GetAllAsync(string? search);
+        Task<PagedResult<Doctor>> GetAllAsync(string? search, int page, int pageSize);
         Task<Doctor?> GetByIdAsync(int id);
         Task<int> CreateAsync(DoctorCreateDto dto);
         Task<bool> UpdateAsync(int id, DoctorCreateDto dto);

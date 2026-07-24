@@ -11,25 +11,51 @@ namespace clinic.Repositories
         private readonly DapperContext _context;
         public AppointmentRepository(DapperContext context) => _context = context;
 
-        public async Task<IEnumerable<Appointment>> GetAllAsync(
-            string? status, string? search)
+        public async Task<PagedResult<Appointment>> GetAllAsync(
+            string? status, string? search, int page, int pageSize)
         {
             using var db = _context.CreateConnection();
-            var sql = @"
+            var whereClause = @"
+                WHERE 1=1";
+
+            if (!string.IsNullOrEmpty(status) && status != "All")
+                whereClause += " AND a.Status=@Status";
+            if (!string.IsNullOrEmpty(search))
+                whereClause += " AND (p.FullName LIKE @Search OR d.FullName LIKE @Search)";
+
+            var countSql = $@"
+                SELECT COUNT(*)
+                FROM Appointments a
+                JOIN Patients p ON a.PatientId = p.Id
+                JOIN Doctors  d ON a.DoctorId  = d.Id
+                {whereClause}";
+            var dataSql = $@"
                 SELECT a.*, p.FullName AS PatientName, p.Phone AS PatientPhone, d.FullName AS DoctorName
                 FROM Appointments a
                 JOIN Patients p ON a.PatientId = p.Id
                 JOIN Doctors  d ON a.DoctorId  = d.Id
-                WHERE 1=1";
+                {whereClause}
+                ORDER BY a.AppointmentDate DESC, a.AppointmentTime
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
 
-            if (!string.IsNullOrEmpty(status) && status != "All")
-                sql += " AND a.Status=@Status";
-            if (!string.IsNullOrEmpty(search))
-                sql += " AND (p.FullName LIKE @Search OR d.FullName LIKE @Search)";
+            var parameters = new
+            {
+                Status = status,
+                Search = $"%{search}%",
+                Offset = (page - 1) * pageSize,
+                PageSize = pageSize
+            };
 
-            sql += " ORDER BY a.AppointmentDate DESC, a.AppointmentTime";
-            return await db.QueryAsync<Appointment>(sql,
-                new { Status = status, Search = $"%{search}%" });
+            var totalCount = await db.ExecuteScalarAsync<int>(countSql, parameters);
+            var items = await db.QueryAsync<Appointment>(dataSql, parameters);
+
+            return new PagedResult<Appointment>
+            {
+                Items = items.ToList(),
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<Appointment?> GetByIdAsync(int id)

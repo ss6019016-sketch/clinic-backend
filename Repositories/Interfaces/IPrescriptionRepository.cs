@@ -5,7 +5,7 @@ namespace clinic.Repositories.Interfaces
 {
     public interface IPrescriptionRepository
     {
-        Task<IEnumerable<Prescription>> GetAllAsync(string? search);
+        Task<PagedResult<Prescription>> GetAllAsync(string? search, int page, int pageSize);
         Task<Prescription?> GetByIdAsync(int id);
         Task<IEnumerable<Prescription>> GetByPatientAsync(int patientId);
         Task<int> CreateAsync(PrescriptionCreateDto dto);

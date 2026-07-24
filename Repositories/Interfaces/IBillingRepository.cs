@@ -5,7 +5,7 @@ namespace clinic.Repositories.Interfaces
 {
     public interface IBillingRepository
     {
-        Task<IEnumerable<Invoice>> GetAllAsync(string? status, string? search);
+        Task<PagedResult<Invoice>> GetAllAsync(string? status, string? search, int page, int pageSize);
         Task<Invoice?> GetByIdAsync(int id);
         Task<int> CreateAsync(InvoiceCreateDto dto);
         Task<bool> UpdateAsync(InvoiceUpdateDto dto);
