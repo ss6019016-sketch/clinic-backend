@@ -38,6 +38,7 @@ namespace clinic.Controllers
             return Ok(appt);
         }
 
+        [RequirePermission("Appointments", "Create")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] AppointmentCreateDto dto)
         {
@@ -46,6 +47,7 @@ namespace clinic.Controllers
             return Ok(new { message = "Appointment booked successfully", id });
         }
 
+        [RequirePermission("Appointments", "Edit")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(
             int id, [FromBody] AppointmentCreateDto dto)
@@ -64,6 +66,7 @@ namespace clinic.Controllers
             return Ok(new { message = "Status updated successfully" });
         }
 
+        [RequirePermission("Appointments", "Delete")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

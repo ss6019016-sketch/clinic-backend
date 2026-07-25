@@ -40,6 +40,7 @@ namespace clinic.Controllers
         public async Task<IActionResult> GetByPatient(int patientId)
             => Ok(await _repo.GetByPatientAsync(patientId));
 
+        [RequirePermission("Prescriptions", "Create")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] PrescriptionCreateDto dto)
         {
@@ -48,6 +49,7 @@ namespace clinic.Controllers
             return Ok(new { message = "Prescription created successfully", id });
         }
 
+        [RequirePermission("Prescriptions", "Edit")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(
             int id, [FromBody] PrescriptionUpdateDto dto)
@@ -59,6 +61,7 @@ namespace clinic.Controllers
             return Ok(new { message = "Prescription updated successfully" });
         }
 
+        [RequirePermission("Prescriptions", "Delete")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

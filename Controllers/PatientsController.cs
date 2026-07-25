@@ -21,6 +21,20 @@ namespace clinic.Controllers
             _service = service;
             _audit = audit;
         }
+
+        private async Task LogAsync(string action, int entityId, string? details = null)
+        {
+            await _audit.LogAsync(new AuditLog
+            {
+                UserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
+                UserName = User.FindFirst(ClaimTypes.Name)?.Value ?? "",
+                Role = User.FindFirst(ClaimTypes.Role)?.Value ?? "",
+                Action = action,
+                Entity = "Patient",
+                EntityId = entityId,
+                Details = details
+            });
+        }
  
         [RequirePermission("Patients", "View")]
         [HttpGet]
@@ -44,20 +58,24 @@ namespace clinic.Controllers
             return Ok(patient);
         }
  
+        [RequirePermission("Patients", "Create")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] PatientCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var id = await _service.CreateAsync(dto);
+            await LogAsync("Create", id);
             return Ok(new { message = "Patient created successfully", id });
         }
  
+        [RequirePermission("Patients", "Edit")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] PatientCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var result = await _service.UpdateAsync(id, dto);
             if (!result) return NotFound(new { message = "Patient not found" });
+            await LogAsync("Update", id);
             return Ok(new { message = "Patient updated successfully" });
         }
  

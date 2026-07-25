@@ -21,7 +21,7 @@ namespace clinic.Controllers
         }
 
         [HttpGet]
-        [RequirePermission("Settings", "View")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll()
             => Ok(await _repo.GetAllAsync());
 
@@ -37,7 +37,7 @@ namespace clinic.Controllers
         }
 
         [HttpPut("{id}")]
-        [RequirePermission("Settings", "Edit")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] PermissionUpdateRequest request)
         {
             var updated = await _repo.UpdateAsync(id, request.CanView, request.CanCreate, request.CanEdit, request.CanDelete);

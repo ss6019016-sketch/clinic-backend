@@ -58,6 +58,7 @@ namespace clinic.Controllers
             return Ok(invoice);
         }
 
+        [RequirePermission("Billing", "Create")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] InvoiceCreateDto dto)
         {
@@ -67,6 +68,7 @@ namespace clinic.Controllers
             return Ok(new { message = "Invoice created successfully", id });
         }
 
+        [RequirePermission("Billing", "Edit")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] InvoiceUpdateDto dto)
         {
@@ -88,6 +90,7 @@ namespace clinic.Controllers
             return Ok(new { message = "Payment status updated" });
         }
 
+        [RequirePermission("Billing", "Delete")]
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)

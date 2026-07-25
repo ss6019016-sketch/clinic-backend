@@ -27,6 +27,7 @@ namespace clinic.Controllers
             return Ok(settings);
         }
 
+        [RequirePermission("Settings", "Edit")]
         [HttpPut]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update([FromBody] SettingsUpdateDto dto)
