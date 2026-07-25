@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using clinic.DTOs.Prescription;
 using clinic.Repositories.Interfaces;
+using clinic.Models;
+using System.Security.Claims;
 
 namespace clinic.Controllers
 {
@@ -12,7 +14,26 @@ namespace clinic.Controllers
     public class PrescriptionsController : ControllerBase
     {
         private readonly IPrescriptionRepository _repo;
-        public PrescriptionsController(IPrescriptionRepository repo) => _repo = repo;
+        private readonly IAuditLogRepository _audit;
+        public PrescriptionsController(IPrescriptionRepository repo, IAuditLogRepository audit)
+        {
+            _repo = repo;
+            _audit = audit;
+        }
+
+        private async Task LogAsync(string action, int entityId, string? details = null)
+        {
+            await _audit.LogAsync(new AuditLog
+            {
+                UserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
+                UserName = User.FindFirst(ClaimTypes.Name)?.Value ?? "",
+                Role = User.FindFirst(ClaimTypes.Role)?.Value ?? "",
+                Action = action,
+                Entity = "Prescription",
+                EntityId = entityId,
+                Details = details
+            });
+        }
 
         [RequirePermission("Prescriptions", "View")]
         [HttpGet]
@@ -46,6 +67,7 @@ namespace clinic.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var id = await _repo.CreateAsync(dto);
+            await LogAsync("Create", id, $"Created prescription for PatientId {dto.PatientId} with diagnosis '{dto.Diagnosis}'");
             return Ok(new { message = "Prescription created successfully", id });
         }
 
@@ -58,6 +80,7 @@ namespace clinic.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var result = await _repo.UpdateAsync(dto);
             if (!result) return NotFound();
+            await LogAsync("Update", id, $"Updated prescription, diagnosis '{dto.Diagnosis}'");
             return Ok(new { message = "Prescription updated successfully" });
         }
 
@@ -67,6 +90,7 @@ namespace clinic.Controllers
         {
             var result = await _repo.DeleteAsync(id);
             if (!result) return NotFound();
+            await LogAsync("Delete", id);
             return Ok(new { message = "Prescription deleted successfully" });
         }
     }

@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using clinic.DTOs.Appointment;
 using clinic.Services.Interfaces;
+using clinic.Repositories.Interfaces;
+using clinic.Models;
+using System.Security.Claims;
 
 namespace clinic.Controllers
 {
@@ -12,8 +15,26 @@ namespace clinic.Controllers
     public class AppointmentsController : ControllerBase
     {
         private readonly IAppointmentService _service;
-        public AppointmentsController(IAppointmentService service)
-            => _service = service;
+        private readonly IAuditLogRepository _audit;
+        public AppointmentsController(IAppointmentService service, IAuditLogRepository audit)
+        {
+            _service = service;
+            _audit = audit;
+        }
+
+        private async Task LogAsync(string action, int entityId, string? details = null)
+        {
+            await _audit.LogAsync(new AuditLog
+            {
+                UserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value),
+                UserName = User.FindFirst(ClaimTypes.Name)?.Value ?? "",
+                Role = User.FindFirst(ClaimTypes.Role)?.Value ?? "",
+                Action = action,
+                Entity = "Appointment",
+                EntityId = entityId,
+                Details = details
+            });
+        }
 
         [RequirePermission("Appointments", "View")]
         [HttpGet]
@@ -44,6 +65,7 @@ namespace clinic.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var id = await _service.CreateAsync(dto);
+            await LogAsync("Create", id, $"Booked appointment for PatientId {dto.PatientId} with DoctorId {dto.DoctorId} on {dto.AppointmentDate:yyyy-MM-dd} at {dto.AppointmentTime}");
             return Ok(new { message = "Appointment booked successfully", id });
         }
 
@@ -55,6 +77,7 @@ namespace clinic.Controllers
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var result = await _service.UpdateAsync(id, dto);
             if (!result) return NotFound(new { message = "Appointment not found" });
+            await LogAsync("Update", id, $"Updated appointment on {dto.AppointmentDate:yyyy-MM-dd} at {dto.AppointmentTime}");
             return Ok(new { message = "Appointment updated successfully" });
         }
 
@@ -63,6 +86,7 @@ namespace clinic.Controllers
         {
             var result = await _service.UpdateStatusAsync(id, status);
             if (!result) return NotFound();
+            await LogAsync("StatusChange", id, $"Status changed to '{status}'");
             return Ok(new { message = "Status updated successfully" });
         }
 
@@ -72,6 +96,7 @@ namespace clinic.Controllers
         {
             var result = await _service.DeleteAsync(id);
             if (!result) return NotFound();
+            await LogAsync("Delete", id);
             return Ok(new { message = "Appointment deleted successfully" });
         }
 
