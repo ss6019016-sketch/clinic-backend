@@ -7,3 +7,4 @@ appsettings.Development.json
 *.suo
 *.userosscache
 *.sln.docstates
+appsettings.json

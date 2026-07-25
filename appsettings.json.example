@@ -1,15 +1,13 @@
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=db60631.databaseasp.net; Database=db60631; User Id=db60631; Password=601%901#6; Encrypt=False; MultipleActiveResultSets=True;"
+    "DefaultConnection": "Server=YOUR_SERVER; Database=YOUR_DB; User Id=YOUR_USER; Password=YOUR_PASSWORD; Encrypt=False; MultipleActiveResultSets=True;"
   },
-
   "JwtSettings": {
-    "SecretKey": "Kj8#mP2$vQx9Nz5wRt7Lb4Yc6Hf3Ds1Aq0Ee@2026ClinicSecure",
+    "SecretKey": "YOUR_SECRET_KEY_HERE",
     "Issuer": "ClinicAPI",
     "Audience": "ClinicClient",
     "ExpiryHours": 24
   },
-
   "WhatsAppSettings": {
     "AccessToken": "",
     "PhoneNumberId": "",
@@ -17,13 +15,11 @@
     "TemplateName": "appointment_reminder",
     "LanguageCode": "en_US"
   },
-
   "Logging": {
     "LogLevel": {
       "Default": "Information",
       "Microsoft.AspNetCore": "Warning"
     }
   },
-
   "AllowedHosts": "*"
 }
