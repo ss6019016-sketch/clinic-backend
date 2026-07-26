@@ -15,7 +15,7 @@ namespace clinic.Repositories
         public async Task<PagedResult<Staff>> GetAllAsync(string? search, int page, int pageSize)
         {
             using var db = _context.CreateConnection();
-            var whereClause = "WHERE 1=1";
+            var whereClause = "WHERE IsDeleted = 0";
             if (!string.IsNullOrEmpty(search))
                 whereClause += @" AND (FullName LIKE @Search
                            OR Email LIKE @Search
@@ -123,8 +123,32 @@ namespace clinic.Repositories
         public async Task<bool> DeleteAsync(int id)
         {
             using var db = _context.CreateConnection();
+            // Soft delete — data preserved, just hidden + login blocked
             return await db.ExecuteAsync(
-                "DELETE FROM Users WHERE Id=@Id",
+                "UPDATE Users SET IsDeleted = 1, DeletedAt = GETDATE() WHERE Id=@Id AND IsDeleted = 0",
+                new { Id = id }) > 0;
+        }
+
+        public async Task<IEnumerable<Staff>> GetTrashAsync()
+        {
+            using var db = _context.CreateConnection();
+            return await db.QueryAsync<Staff>(
+                "SELECT * FROM Users WHERE IsDeleted = 1 ORDER BY DeletedAt DESC");
+        }
+
+        public async Task<bool> RestoreAsync(int id)
+        {
+            using var db = _context.CreateConnection();
+            return await db.ExecuteAsync(
+                "UPDATE Users SET IsDeleted = 0, DeletedAt = NULL WHERE Id=@Id AND IsDeleted = 1",
+                new { Id = id }) > 0;
+        }
+
+        public async Task<bool> HardDeleteAsync(int id)
+        {
+            using var db = _context.CreateConnection();
+            return await db.ExecuteAsync(
+                "DELETE FROM Users WHERE Id=@Id AND IsDeleted = 1",
                 new { Id = id }) > 0;
         }
     }

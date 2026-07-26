@@ -89,7 +89,30 @@ namespace clinic.Repositories
         {
             using var db = _context.CreateConnection();
             return await db.ExecuteAsync(
-                "UPDATE Doctors SET Status='Inactive' WHERE Id=@Id",
+                "UPDATE Doctors SET Status='Inactive' WHERE Id=@Id AND Status='Active'",
+                new { Id = id }) > 0;
+        }
+
+        public async Task<IEnumerable<Doctor>> GetTrashAsync()
+        {
+            using var db = _context.CreateConnection();
+            return await db.QueryAsync<Doctor>(
+                "SELECT * FROM Doctors WHERE Status='Inactive' ORDER BY CreatedAt DESC");
+        }
+
+        public async Task<bool> RestoreAsync(int id)
+        {
+            using var db = _context.CreateConnection();
+            return await db.ExecuteAsync(
+                "UPDATE Doctors SET Status='Active' WHERE Id=@Id AND Status='Inactive'",
+                new { Id = id }) > 0;
+        }
+
+        public async Task<bool> HardDeleteAsync(int id)
+        {
+            using var db = _context.CreateConnection();
+            return await db.ExecuteAsync(
+                "DELETE FROM Doctors WHERE Id=@Id AND Status='Inactive'",
                 new { Id = id }) > 0;
         }
     }

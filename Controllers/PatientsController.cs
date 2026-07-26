@@ -106,5 +106,31 @@ namespace clinic.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [RequirePermission("Patients", "Delete")]
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash()
+            => Ok(await _service.GetTrashAsync());
+
+        [RequirePermission("Patients", "Delete")]
+        [HttpPatch("{id}/restore")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            var result = await _service.RestoreAsync(id);
+            if (!result) return NotFound(new { message = "Patient not found in trash" });
+            await LogAsync("Restore", id);
+            return Ok(new { message = "Patient restored successfully" });
+        }
+
+        [RequirePermission("Patients", "Delete")]
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{id}/permanent")]
+        public async Task<IActionResult> PermanentDelete(int id)
+        {
+            var result = await _service.HardDeleteAsync(id);
+            if (!result) return NotFound(new { message = "Patient not found in trash" });
+            await LogAsync("PermanentDelete", id);
+            return Ok(new { message = "Patient permanently deleted" });
+        }
     }
 }

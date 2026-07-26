@@ -10,5 +10,7 @@
         public string Role { get; set; } = "Receptionist";
         public string Status { get; set; } = "Active";
         public DateTime CreatedAt { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
     }
 }

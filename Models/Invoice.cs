@@ -15,6 +15,8 @@
         public string PaymentMethod { get; set; } = string.Empty;
         public string Notes { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
         public List<InvoiceItem> Items { get; set; } = new();
     }
 }

@@ -93,5 +93,31 @@ namespace clinic.Controllers
             await LogAsync("Delete", id);
             return Ok(new { message = "Prescription deleted successfully" });
         }
+
+        [RequirePermission("Prescriptions", "Delete")]
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash()
+            => Ok(await _repo.GetTrashAsync());
+
+        [RequirePermission("Prescriptions", "Delete")]
+        [HttpPatch("{id}/restore")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            var result = await _repo.RestoreAsync(id);
+            if (!result) return NotFound(new { message = "Prescription not found in trash" });
+            await LogAsync("Restore", id);
+            return Ok(new { message = "Prescription restored successfully" });
+        }
+
+        [RequirePermission("Prescriptions", "Delete")]
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{id}/permanent")]
+        public async Task<IActionResult> PermanentDelete(int id)
+        {
+            var result = await _repo.HardDeleteAsync(id);
+            if (!result) return NotFound(new { message = "Prescription not found in trash" });
+            await LogAsync("PermanentDelete", id);
+            return Ok(new { message = "Prescription permanently deleted" });
+        }
     }
 }

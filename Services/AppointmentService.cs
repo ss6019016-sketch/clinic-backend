@@ -61,6 +61,15 @@ namespace clinic.Services
         public Task<bool> DeleteAsync(int id)
             => _repo.DeleteAsync(id);
 
+        public Task<IEnumerable<Appointment>> GetTrashAsync()
+            => _repo.GetTrashAsync();
+
+        public Task<bool> RestoreAsync(int id)
+            => _repo.RestoreAsync(id);
+
+        public Task<bool> HardDeleteAsync(int id)
+            => _repo.HardDeleteAsync(id);
+
         public async Task<(bool success, string message)> SendReminderNowAsync(int id)
         {
             var appt = await _repo.GetByIdAsync(id);

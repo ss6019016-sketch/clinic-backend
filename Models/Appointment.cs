@@ -16,5 +16,7 @@
         public string Notes { get; set; } = string.Empty;
         public bool ReminderSent { get; set; } = false;
         public DateTime CreatedAt { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
     }
 }

@@ -12,5 +12,10 @@ namespace clinic.Services.Interfaces
         Task<bool> UpdateStatusAsync(int id, string status);
         Task<bool> DeleteAsync(int id);
         Task<(bool success, string message)> SendReminderNowAsync(int id);
+
+        // Soft-delete / Trash support
+        Task<IEnumerable<Appointment>> GetTrashAsync();
+        Task<bool> RestoreAsync(int id);
+        Task<bool> HardDeleteAsync(int id);
     }
 }

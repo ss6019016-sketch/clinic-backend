@@ -10,5 +10,10 @@ namespace clinic.Services.Interfaces
         Task<int> CreateAsync(PatientCreateDto dto);
         Task<bool> UpdateAsync(int id, PatientCreateDto dto);
         Task<bool> DeleteAsync(int id);
+
+        // Soft-delete / Trash support
+        Task<IEnumerable<Patient>> GetTrashAsync();
+        Task<bool> RestoreAsync(int id);
+        Task<bool> HardDeleteAsync(int id);
     }
 }

@@ -22,7 +22,7 @@ namespace clinic.Services
         {
             using var db = _context.CreateConnection();
             var user = await db.QueryFirstOrDefaultAsync<User>(
-                "SELECT * FROM Users WHERE Email=@Email AND Status='Active'",
+                "SELECT * FROM Users WHERE Email=@Email AND Status='Active' AND IsDeleted = 0",
                 new { dto.Email });
 
             if (user == null) return null;
@@ -42,7 +42,7 @@ namespace clinic.Services
             using var db = _context.CreateConnection();
 
             var exists = await db.QueryFirstOrDefaultAsync<User>(
-                "SELECT Id FROM Users WHERE Email=@Email", new { dto.Email });
+                "SELECT Id FROM Users WHERE Email=@Email AND IsDeleted = 0", new { dto.Email });
             if (exists != null) return false;
 
             await db.ExecuteAsync(@"

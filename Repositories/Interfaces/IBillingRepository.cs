@@ -11,5 +11,10 @@ namespace clinic.Repositories.Interfaces
         Task<bool> UpdateAsync(InvoiceUpdateDto dto);
         Task<bool> UpdateStatusAsync(int id, InvoiceStatusDto dto);
         Task<bool> DeleteAsync(int id);
+
+        // Soft-delete / Trash support
+        Task<IEnumerable<Invoice>> GetTrashAsync();
+        Task<bool> RestoreAsync(int id);
+        Task<bool> HardDeleteAsync(int id);
     }
 }

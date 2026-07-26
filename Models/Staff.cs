@@ -11,5 +11,7 @@
         public string Status { get; set; } = "Active";
         public DateTime JoinDate { get; set; } = DateTime.Now;
         public DateTime CreatedAt { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
     }
 }

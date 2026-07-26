@@ -107,6 +107,32 @@ namespace clinic.Controllers
             return Ok(new { message = "Appointment deleted successfully" });
         }
 
+        [RequirePermission("Appointments", "Delete")]
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash()
+            => Ok(await _service.GetTrashAsync());
+
+        [RequirePermission("Appointments", "Delete")]
+        [HttpPatch("{id}/restore")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            var result = await _service.RestoreAsync(id);
+            if (!result) return NotFound(new { message = "Appointment not found in trash" });
+            await LogAsync("Restore", id);
+            return Ok(new { message = "Appointment restored successfully" });
+        }
+
+        [RequirePermission("Appointments", "Delete")]
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{id}/permanent")]
+        public async Task<IActionResult> PermanentDelete(int id)
+        {
+            var result = await _service.HardDeleteAsync(id);
+            if (!result) return NotFound(new { message = "Appointment not found in trash" });
+            await LogAsync("PermanentDelete", id);
+            return Ok(new { message = "Appointment permanently deleted" });
+        }
+
         [HttpPost("{id}/send-reminder")]
         public async Task<IActionResult> SendReminder(int id)
         {

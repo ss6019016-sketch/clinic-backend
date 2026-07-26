@@ -12,6 +12,8 @@
         public string Notes { get; set; } = string.Empty;
         public DateTime? FollowUpDate { get; set; }
         public DateTime CreatedAt { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
         public List<PrescriptionItem> Medicines { get; set; } = new();
     }
 

@@ -15,5 +15,10 @@ namespace clinic.Repositories.Interfaces
         // Reminder support
         Task<IEnumerable<Appointment>> GetPendingRemindersAsync(DateTime date);
         Task<bool> MarkReminderSentAsync(int id);
+
+        // Soft-delete / Trash support
+        Task<IEnumerable<Appointment>> GetTrashAsync();
+        Task<bool> RestoreAsync(int id);
+        Task<bool> HardDeleteAsync(int id);
     }
 }

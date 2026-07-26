@@ -40,5 +40,14 @@ namespace clinic.Services
 
         public Task<bool> DeleteAsync(int id)
             => _repo.DeleteAsync(id);
+
+        public Task<IEnumerable<Patient>> GetTrashAsync()
+            => _repo.GetTrashAsync();
+
+        public Task<bool> RestoreAsync(int id)
+            => _repo.RestoreAsync(id);
+
+        public Task<bool> HardDeleteAsync(int id)
+            => _repo.HardDeleteAsync(id);
     }
 }

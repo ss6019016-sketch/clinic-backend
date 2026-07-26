@@ -15,7 +15,7 @@ namespace clinic.Repositories
             string? status, string? search, int page, int pageSize)
         {
             using var db = _context.CreateConnection();
-            var whereClause = "WHERE 1=1";
+            var whereClause = "WHERE i.IsDeleted = 0";
 
             if (!string.IsNullOrEmpty(status) && status != "All")
                 whereClause += " AND i.Status = @Status";
@@ -191,8 +191,40 @@ namespace clinic.Repositories
         public async Task<bool> DeleteAsync(int id)
         {
             using var db = _context.CreateConnection();
+            // Soft delete — accidental delete se data safe rehta hai
             return await db.ExecuteAsync(
-                "DELETE FROM Invoices WHERE Id=@Id", new { Id = id }) > 0;
+                "UPDATE Invoices SET IsDeleted = 1, DeletedAt = GETDATE() WHERE Id=@Id AND IsDeleted = 0",
+                new { Id = id }) > 0;
+        }
+
+        public async Task<IEnumerable<Invoice>> GetTrashAsync()
+        {
+            using var db = _context.CreateConnection();
+            var sql = @"
+                SELECT i.*, p.FullName AS PatientName
+                FROM Invoices i
+                JOIN Patients p ON i.PatientId = p.Id
+                WHERE i.IsDeleted = 1
+                ORDER BY i.DeletedAt DESC";
+            return await db.QueryAsync<Invoice>(sql);
+        }
+
+        public async Task<bool> RestoreAsync(int id)
+        {
+            using var db = _context.CreateConnection();
+            return await db.ExecuteAsync(
+                "UPDATE Invoices SET IsDeleted = 0, DeletedAt = NULL WHERE Id=@Id AND IsDeleted = 1",
+                new { Id = id }) > 0;
+        }
+
+        public async Task<bool> HardDeleteAsync(int id)
+        {
+            using var db = _context.CreateConnection();
+            await db.ExecuteAsync(
+                "DELETE FROM InvoiceItems WHERE InvoiceId=@Id", new { Id = id });
+            return await db.ExecuteAsync(
+                "DELETE FROM Invoices WHERE Id=@Id AND IsDeleted = 1",
+                new { Id = id }) > 0;
         }
     }
 }

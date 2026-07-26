@@ -14,7 +14,7 @@ namespace clinic.Repositories
         public async Task<PagedResult<Prescription>> GetAllAsync(string? search, int page, int pageSize)
         {
             using var db = _context.CreateConnection();
-            var whereClause = "WHERE 1=1";
+            var whereClause = "WHERE pr.IsDeleted = 0";
 
             if (!string.IsNullOrEmpty(search))
                 whereClause += @" AND (p.FullName LIKE @Search
@@ -82,7 +82,7 @@ namespace clinic.Repositories
                 SELECT pr.*, d.FullName AS DoctorName
                 FROM Prescriptions pr
                 JOIN Doctors d ON pr.DoctorId = d.Id
-                WHERE pr.PatientId = @PatientId
+                WHERE pr.PatientId = @PatientId AND pr.IsDeleted = 0
                 ORDER BY pr.CreatedAt DESC",
                 new { PatientId = patientId })).ToList();
 
@@ -194,7 +194,38 @@ namespace clinic.Repositories
         {
             using var db = _context.CreateConnection();
             return await db.ExecuteAsync(
-                "DELETE FROM Prescriptions WHERE Id=@Id",
+                "UPDATE Prescriptions SET IsDeleted = 1, DeletedAt = GETDATE() WHERE Id=@Id AND IsDeleted = 0",
+                new { Id = id }) > 0;
+        }
+
+        public async Task<IEnumerable<Prescription>> GetTrashAsync()
+        {
+            using var db = _context.CreateConnection();
+            var sql = @"
+                SELECT pr.*, p.FullName AS PatientName, d.FullName AS DoctorName
+                FROM Prescriptions pr
+                JOIN Patients p ON pr.PatientId = p.Id
+                JOIN Doctors d  ON pr.DoctorId  = d.Id
+                WHERE pr.IsDeleted = 1
+                ORDER BY pr.DeletedAt DESC";
+            return await db.QueryAsync<Prescription>(sql);
+        }
+
+        public async Task<bool> RestoreAsync(int id)
+        {
+            using var db = _context.CreateConnection();
+            return await db.ExecuteAsync(
+                "UPDATE Prescriptions SET IsDeleted = 0, DeletedAt = NULL WHERE Id=@Id AND IsDeleted = 1",
+                new { Id = id }) > 0;
+        }
+
+        public async Task<bool> HardDeleteAsync(int id)
+        {
+            using var db = _context.CreateConnection();
+            await db.ExecuteAsync(
+                "DELETE FROM PrescriptionItems WHERE PrescriptionId=@Id", new { Id = id });
+            return await db.ExecuteAsync(
+                "DELETE FROM Prescriptions WHERE Id=@Id AND IsDeleted = 1",
                 new { Id = id }) > 0;
         }
     }

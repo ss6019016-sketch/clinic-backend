@@ -102,5 +102,31 @@ namespace clinic.Controllers
 
             return Ok(new { message = "Invoice deleted successfully" });
         }
+
+        [RequirePermission("Billing", "Delete")]
+        [HttpGet("trash")]
+        public async Task<IActionResult> GetTrash()
+            => Ok(await _repo.GetTrashAsync());
+
+        [RequirePermission("Billing", "Delete")]
+        [HttpPatch("{id}/restore")]
+        public async Task<IActionResult> Restore(int id)
+        {
+            var result = await _repo.RestoreAsync(id);
+            if (!result) return NotFound(new { message = "Invoice not found in trash" });
+            await LogAsync("Restore", id);
+            return Ok(new { message = "Invoice restored successfully" });
+        }
+
+        [RequirePermission("Billing", "Delete")]
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{id}/permanent")]
+        public async Task<IActionResult> PermanentDelete(int id)
+        {
+            var result = await _repo.HardDeleteAsync(id);
+            if (!result) return NotFound(new { message = "Invoice not found in trash" });
+            await LogAsync("PermanentDelete", id);
+            return Ok(new { message = "Invoice permanently deleted" });
+        }
     }
 }
