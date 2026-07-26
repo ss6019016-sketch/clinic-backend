@@ -17,7 +17,15 @@ namespace clinic.Repositories
                         FROM DoctorAvailability da
                         INNER JOIN Doctors d ON d.Id = da.DoctorId
                         WHERE da.DoctorId=@DoctorId AND da.IsActive=1
-                        ORDER BY FIELD(da.DayOfWeek,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday')";
+                        ORDER BY CASE da.DayOfWeek
+                            WHEN 'Monday' THEN 1
+                            WHEN 'Tuesday' THEN 2
+                            WHEN 'Wednesday' THEN 3
+                            WHEN 'Thursday' THEN 4
+                            WHEN 'Friday' THEN 5
+                            WHEN 'Saturday' THEN 6
+                            WHEN 'Sunday' THEN 7
+                        END";
             return await db.QueryAsync<DoctorAvailability>(sql, new { DoctorId = doctorId });
         }
 
@@ -33,8 +41,8 @@ namespace clinic.Repositories
             using var db = _context.CreateConnection();
             var sql = @"INSERT INTO DoctorAvailability 
                         (DoctorId, DayOfWeek, StartTime, EndTime, SlotDurationMinutes, IsActive, CreatedAt)
-                        VALUES (@DoctorId, @DayOfWeek, @StartTime, @EndTime, @SlotDurationMinutes, @IsActive, NOW());
-                        SELECT LAST_INSERT_ID();";
+                        VALUES (@DoctorId, @DayOfWeek, @StartTime, @EndTime, @SlotDurationMinutes, @IsActive, GETDATE());
+                        SELECT CAST(SCOPE_IDENTITY() AS INT);";
             return await db.QuerySingleAsync<int>(sql, entity);
         }
 
@@ -60,7 +68,7 @@ namespace clinic.Repositories
         {
             using var db = _context.CreateConnection();
             var sql = @"SELECT AppointmentTime FROM Appointments 
-                        WHERE DoctorId=@DoctorId AND DATE(AppointmentDate)=DATE(@Date)
+                        WHERE DoctorId=@DoctorId AND CAST(AppointmentDate AS DATE) = CAST(@Date AS DATE)
                         AND Status <> 'Cancelled'";
             return await db.QueryAsync<string>(sql, new { DoctorId = doctorId, Date = date });
         }

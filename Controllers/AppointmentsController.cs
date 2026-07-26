@@ -64,9 +64,16 @@ namespace clinic.Controllers
         public async Task<IActionResult> Create([FromBody] AppointmentCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            var id = await _service.CreateAsync(dto);
-            await LogAsync("Create", id, $"Booked appointment for PatientId {dto.PatientId} with DoctorId {dto.DoctorId} on {dto.AppointmentDate:yyyy-MM-dd} at {dto.AppointmentTime}");
-            return Ok(new { message = "Appointment booked successfully", id });
+            try
+            {
+                var id = await _service.CreateAsync(dto);
+                await LogAsync("Create", id, $"Booked appointment for PatientId {dto.PatientId} with DoctorId {dto.DoctorId} on {dto.AppointmentDate:yyyy-MM-dd} at {dto.AppointmentTime}");
+                return Ok(new { message = "Appointment booked successfully", id });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
         }
 
         [RequirePermission("Appointments", "Edit")]
