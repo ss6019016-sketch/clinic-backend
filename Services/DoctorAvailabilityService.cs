@@ -61,7 +61,10 @@ namespace clinic.Services
                 var current = sch.StartTime;
                 while (current.Add(TimeSpan.FromMinutes(sch.SlotDurationMinutes)) <= sch.EndTime)
                 {
-                    var timeStr = DateTime.Today.Add(current).ToString("hh:mm tt", CultureInfo.InvariantCulture);
+                    // 24-hour "HH:mm" — matches the format the frontend's <input type="time">
+                    // actually submits and stores on the Appointment record. Using 12-hour
+                    // "hh:mm tt" here would silently break every match against booked times.
+                    var timeStr = DateTime.Today.Add(current).ToString("HH:mm", CultureInfo.InvariantCulture);
                     slots.Add(new AvailableSlotDto
                     {
                         Time = timeStr,
