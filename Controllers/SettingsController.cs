@@ -5,6 +5,7 @@ using Dapper;
 using clinic.Data;
 using clinic.DTOs.Settings;
 using clinic.Helpers;
+using clinic.Models;
 using System.Security.Claims;
 
 namespace clinic.Controllers
@@ -22,7 +23,7 @@ namespace clinic.Controllers
         public async Task<IActionResult> Get()
         {
             using var db = _context.CreateConnection();
-            var settings = await db.QueryFirstOrDefaultAsync(
+            var settings = await db.QueryFirstOrDefaultAsync<ClinicSettings>(
                 "SELECT * FROM ClinicSettings WHERE Id=1");
             return Ok(settings);
         }
