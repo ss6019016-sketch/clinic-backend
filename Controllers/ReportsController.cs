@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Dapper;
 using clinic.Data;
+using clinic.DTOs.Reports;
 
 namespace clinic.Controllers
 {
@@ -29,7 +30,7 @@ namespace clinic.Controllers
                 ? DateTime.Now
                 : DateTime.Parse(to);
 
-            var data = await db.QueryAsync(@"
+            var data = await db.QueryAsync<RevenueReportDto>(@"
                 SELECT
                     CAST(CreatedAt AS DATE) AS Date,
                     SUM(GrandTotal)         AS Total,
@@ -49,7 +50,7 @@ namespace clinic.Controllers
         public async Task<IActionResult> GetTopDoctors()
         {
             using var db = _context.CreateConnection();
-            var data = await db.QueryAsync(@"
+            var data = await db.QueryAsync<DoctorReportDto>(@"
                 SELECT TOP 5
                     d.FullName         AS DoctorName,
                     d.Specialization,
@@ -79,7 +80,7 @@ namespace clinic.Controllers
                 ? DateTime.Now
                 : DateTime.Parse(to);
 
-            var data = await db.QueryAsync(@"
+            var data = await db.QueryAsync<AppointmentStatDto>(@"
                 SELECT
                     CAST(AppointmentDate AS DATE) AS Date,
                     COUNT(*) AS Total,
@@ -92,6 +93,43 @@ namespace clinic.Controllers
                 GROUP BY CAST(AppointmentDate AS DATE)
                 ORDER BY CAST(AppointmentDate AS DATE)",
                 new { From = fromDate, To = toDate });
+
+            return Ok(data);
+        }
+
+        [RequirePermission("Reports", "View")]
+        [HttpGet("invoice-status")]
+        public async Task<IActionResult> GetInvoiceStatusBreakdown()
+        {
+            using var db = _context.CreateConnection();
+
+            var data = await db.QueryAsync<InvoiceStatusReportDto>(@"
+                SELECT
+                    Status,
+                    COUNT(*)         AS Count,
+                    ISNULL(SUM(GrandTotal), 0) AS TotalAmount
+                FROM Invoices
+                GROUP BY Status
+                ORDER BY TotalAmount DESC");
+
+            return Ok(data);
+        }
+
+        [RequirePermission("Reports", "View")]
+        [HttpGet("payment-methods")]
+        public async Task<IActionResult> GetPaymentMethodBreakdown()
+        {
+            using var db = _context.CreateConnection();
+
+            var data = await db.QueryAsync<PaymentMethodReportDto>(@"
+                SELECT
+                    ISNULL(NULLIF(PaymentMethod, ''), 'Unspecified') AS PaymentMethod,
+                    COUNT(*)         AS Count,
+                    ISNULL(SUM(GrandTotal), 0) AS TotalAmount
+                FROM Invoices
+                WHERE Status = 'Paid'
+                GROUP BY PaymentMethod
+                ORDER BY TotalAmount DESC");
 
             return Ok(data);
         }
