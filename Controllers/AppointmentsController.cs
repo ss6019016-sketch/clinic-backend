@@ -110,5 +110,6 @@ namespace clinic.Controllers
 
             return Ok(new { message });
         }
+
     }
 }

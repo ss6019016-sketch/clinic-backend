@@ -9,10 +9,16 @@ namespace clinic.Services
     {
         private readonly IAppointmentRepository _repo;
         private readonly IWhatsAppService _whatsApp;
-        public AppointmentService(IAppointmentRepository repo, IWhatsAppService whatsApp)
+        private readonly IDoctorAvailabilityService _availabilityService;
+
+        public AppointmentService(
+            IAppointmentRepository repo,
+            IWhatsAppService whatsApp,
+            IDoctorAvailabilityService availabilityService)
         {
             _repo = repo;
             _whatsApp = whatsApp;
+            _availabilityService = availabilityService;
         }
 
         public Task<PagedResult<Appointment>> GetAllAsync(string? status, string? search, int page, int pageSize)
@@ -21,8 +27,16 @@ namespace clinic.Services
         public Task<Appointment?> GetByIdAsync(int id)
             => _repo.GetByIdAsync(id);
 
-        public Task<int> CreateAsync(AppointmentCreateDto dto)
-            => _repo.CreateAsync(dto);
+        public async Task<int> CreateAsync(AppointmentCreateDto dto)
+        {
+            var isAvailable = await _availabilityService.IsSlotAvailableAsync(
+                dto.DoctorId, dto.AppointmentDate, dto.AppointmentTime);
+
+            if (!isAvailable)
+                throw new InvalidOperationException("This slot is already booked. Please choose another time.");
+
+            return await _repo.CreateAsync(dto);
+        }
 
         public Task<bool> UpdateAsync(int id, AppointmentCreateDto dto)
         {
