@@ -2,9 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Dapper;
 using clinic.Data;
+using clinic.DTOs.Reports;
 
 namespace clinic.Controllers
-{   
+{
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
@@ -30,7 +31,7 @@ namespace clinic.Controllers
             var pendingBills = await db.ExecuteScalarAsync<int>(
                 "SELECT COUNT(*) FROM Invoices WHERE Status='Unpaid'");
 
-            var recentAppointments = await db.QueryAsync(@"
+            var recentAppointments = await db.QueryAsync<RecentAppointmentDto>(@"
                 SELECT TOP 5
                     a.Id, p.FullName AS PatientName,
                     d.FullName AS DoctorName,
