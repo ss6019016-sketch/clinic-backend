@@ -31,6 +31,12 @@ namespace clinic.Controllers
             var pendingBills = await db.ExecuteScalarAsync<int>(
                 "SELECT COUNT(*) FROM Invoices WHERE Status='Unpaid'");
 
+            var lowStockCount = await db.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM Medicines WHERE Status='Active' AND StockQuantity <= ReorderLevel");
+
+            var unreadNotifications = await db.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM Notifications WHERE IsRead = 0");
+
             var recentAppointments = await db.QueryAsync<RecentAppointmentDto>(@"
                 SELECT TOP 5
                     a.Id, p.FullName AS PatientName,
@@ -48,6 +54,8 @@ namespace clinic.Controllers
                 totalDoctors,
                 todayAppointments,
                 pendingBills,
+                lowStockCount,
+                unreadNotifications,
                 recentAppointments
             });
         }

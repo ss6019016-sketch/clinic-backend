@@ -9,7 +9,18 @@ namespace clinic.Repositories
     public class PrescriptionRepository : IPrescriptionRepository
     {
         private readonly DapperContext _context;
-        public PrescriptionRepository(DapperContext context) => _context = context;
+        private readonly IMedicineRepository _medicineRepo;
+        private readonly INotificationRepository _notificationRepo;
+
+        public PrescriptionRepository(
+            DapperContext context,
+            IMedicineRepository medicineRepo,
+            INotificationRepository notificationRepo)
+        {
+            _context = context;
+            _medicineRepo = medicineRepo;
+            _notificationRepo = notificationRepo;
+        }
 
         public async Task<PagedResult<Prescription>> GetAllAsync(string? search, int page, int pageSize)
         {
@@ -123,20 +134,41 @@ namespace clinic.Repositories
             {
                 await db.ExecuteAsync(@"
                     INSERT INTO PrescriptionItems
-                        (PrescriptionId, MedicineName, Dosage,
+                        (PrescriptionId, MedicineId, Quantity, MedicineName, Dosage,
                          Frequency, Duration, Instructions)
                     VALUES
-                        (@PrescriptionId, @MedicineName, @Dosage,
+                        (@PrescriptionId, @MedicineId, @Quantity, @MedicineName, @Dosage,
                          @Frequency, @Duration, @Instructions)",
                     new
                     {
                         PrescriptionId = rxId,
+                        med.MedicineId,
+                        med.Quantity,
                         med.MedicineName,
                         med.Dosage,
                         med.Frequency,
                         med.Duration,
                         med.Instructions
                     });
+
+                if (med.MedicineId.HasValue && med.MedicineId.Value > 0)
+                {
+                    await _medicineRepo.AdjustStockAsync(
+                        med.MedicineId.Value, -med.Quantity, "Prescription", rxId,
+                        $"Deducted for Prescription #{rxId}");
+
+                    var medicine = await _medicineRepo.GetByIdAsync(med.MedicineId.Value);
+                    if (medicine != null && medicine.IsLowStock)
+                    {
+                        await _notificationRepo.CreateAsync(new Notification
+                        {
+                            Title = "Low Stock Alert",
+                            Message = $"{medicine.Name} stock is low ({medicine.StockQuantity} left, reorder level {medicine.ReorderLevel}).",
+                            Type = "LowStock",
+                            Link = "/pharmacy/medicines"
+                        });
+                    }
+                }
             }
             return rxId;
         }
@@ -172,14 +204,16 @@ namespace clinic.Repositories
             {
                 await db.ExecuteAsync(@"
                     INSERT INTO PrescriptionItems
-                        (PrescriptionId, MedicineName, Dosage,
+                        (PrescriptionId, MedicineId, Quantity, MedicineName, Dosage,
                          Frequency, Duration, Instructions)
                     VALUES
-                        (@PrescriptionId, @MedicineName, @Dosage,
+                        (@PrescriptionId, @MedicineId, @Quantity, @MedicineName, @Dosage,
                          @Frequency, @Duration, @Instructions)",
                     new
                     {
                         PrescriptionId = dto.Id,
+                        med.MedicineId,
+                        med.Quantity,
                         med.MedicineName,
                         med.Dosage,
                         med.Frequency,
@@ -193,9 +227,22 @@ namespace clinic.Repositories
         public async Task<bool> DeleteAsync(int id)
         {
             using var db = _context.CreateConnection();
-            return await db.ExecuteAsync(
+            var result = await db.ExecuteAsync(
                 "UPDATE Prescriptions SET IsDeleted = 1, DeletedAt = GETDATE() WHERE Id=@Id AND IsDeleted = 0",
                 new { Id = id }) > 0;
+
+            if (result)
+            {
+                var items = await db.QueryAsync<PrescriptionItem>(
+                    "SELECT * FROM PrescriptionItems WHERE PrescriptionId=@Id", new { Id = id });
+                foreach (var item in items.Where(i => i.MedicineId.HasValue))
+                {
+                    await _medicineRepo.AdjustStockAsync(
+                        item.MedicineId!.Value, item.Quantity, "Adjustment", id,
+                        $"Restocked - Prescription #{id} deleted");
+                }
+            }
+            return result;
         }
 
         public async Task<IEnumerable<Prescription>> GetTrashAsync()
@@ -214,9 +261,22 @@ namespace clinic.Repositories
         public async Task<bool> RestoreAsync(int id)
         {
             using var db = _context.CreateConnection();
-            return await db.ExecuteAsync(
+            var result = await db.ExecuteAsync(
                 "UPDATE Prescriptions SET IsDeleted = 0, DeletedAt = NULL WHERE Id=@Id AND IsDeleted = 1",
                 new { Id = id }) > 0;
+
+            if (result)
+            {
+                var items = await db.QueryAsync<PrescriptionItem>(
+                    "SELECT * FROM PrescriptionItems WHERE PrescriptionId=@Id", new { Id = id });
+                foreach (var item in items.Where(i => i.MedicineId.HasValue))
+                {
+                    await _medicineRepo.AdjustStockAsync(
+                        item.MedicineId!.Value, -item.Quantity, "Adjustment", id,
+                        $"Re-deducted - Prescription #{id} restored");
+                }
+            }
+            return result;
         }
 
         public async Task<bool> HardDeleteAsync(int id)

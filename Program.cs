@@ -53,7 +53,11 @@ builder.Services.AddScoped<IStaffRepository, StaffRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 builder.Services.AddScoped<IDoctorAvailabilityRepository, DoctorAvailabilityRepository>();
-builder.Services.AddScoped<ILabReportRepository, LabReportRepository>();
+builder.Services.AddScoped<IMedicineRepository, MedicineRepository>();
+// Repositories mein add karo:
+builder.Services.AddScoped<IVendorRepository, VendorRepository>();
+builder.Services.AddScoped<IMedicineRepository, MedicineRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
 
 // Services

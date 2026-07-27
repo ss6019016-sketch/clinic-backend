@@ -66,9 +66,16 @@ namespace clinic.Controllers
         public async Task<IActionResult> Create([FromBody] PrescriptionCreateDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            var id = await _repo.CreateAsync(dto);
-            await LogAsync("Create", id, $"Created prescription for PatientId {dto.PatientId} with diagnosis '{dto.Diagnosis}'");
-            return Ok(new { message = "Prescription created successfully", id });
+            try
+            {
+                var id = await _repo.CreateAsync(dto);
+                await LogAsync("Create", id, $"Created prescription for PatientId {dto.PatientId} with diagnosis '{dto.Diagnosis}'");
+                return Ok(new { message = "Prescription created successfully", id });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [RequirePermission("Prescriptions", "Edit")]
@@ -78,10 +85,17 @@ namespace clinic.Controllers
         {
             dto.Id = id;
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            var result = await _repo.UpdateAsync(dto);
-            if (!result) return NotFound();
-            await LogAsync("Update", id, $"Updated prescription, diagnosis '{dto.Diagnosis}'");
-            return Ok(new { message = "Prescription updated successfully" });
+            try
+            {
+                var result = await _repo.UpdateAsync(dto);
+                if (!result) return NotFound();
+                await LogAsync("Update", id, $"Updated prescription, diagnosis '{dto.Diagnosis}'");
+                return Ok(new { message = "Prescription updated successfully" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [RequirePermission("Prescriptions", "Delete")]

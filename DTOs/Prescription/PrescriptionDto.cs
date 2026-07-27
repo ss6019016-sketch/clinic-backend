@@ -16,6 +16,8 @@ namespace clinic.DTOs.Prescription
 
     public class PrescriptionItemDto
     {
+        public int? MedicineId { get; set; }         // NEW - optional link to Medicines table
+        public int Quantity { get; set; } = 1;        // NEW
         [Required] public string MedicineName { get; set; } = string.Empty;
         [Required] public string Dosage { get; set; } = string.Empty;
         [Required] public string Frequency { get; set; } = string.Empty;
